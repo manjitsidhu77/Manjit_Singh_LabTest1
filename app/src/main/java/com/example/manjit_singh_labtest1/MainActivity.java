@@ -5,6 +5,7 @@ import static android.webkit.ConsoleMessage.MessageLevel.LOG;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -15,10 +16,12 @@ import android.widget.ShareActionProvider;
 import android.widget.Switch;
 import android.widget.Toast;
 
+
 public class MainActivity extends AppCompatActivity {
     Button register,clear,display,overwrite;
     EditText email,password,security;
     Switch swi;
+    DBHelper mydb;
     SharedPreferences preferences;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +36,9 @@ public class MainActivity extends AppCompatActivity {
         security = (EditText) findViewById(R.id.editTextSecurity);
         preferences = getSharedPreferences("user_data",MODE_PRIVATE);
         swi = findViewById(R.id.switch1);
+        mydb = new DBHelper(this);
+
+
 
         register.setOnClickListener(view -> {
             String strEmail = email.getText().toString();
@@ -58,7 +64,8 @@ public class MainActivity extends AppCompatActivity {
         });
         display.setOnClickListener(view -> {
             if(swi.isChecked()){
-                //saveDataIntoSqlite(strEmail,strPassword,strSecurity);
+                getDataFromSqlite();
+
             }
             else{
                 getDataFromSharedPref();
@@ -74,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(),"Required Fields!!",Toast.LENGTH_SHORT).show();
             }
             if(swi.isChecked()){
-
+                updateDataToSqlite(strEmail,strPassword,strSecurity);
             }
             else{
                 saveDataIntoSharedPref(strEmail,strPassword,strSecurity);
@@ -102,6 +109,22 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void updateDataToSqlite(String strEmail, String strPassword, String strSecurity) {
+        if(mydb.updateUser(1,strEmail,strPassword,strSecurity)){
+            Toast.makeText(getApplicationContext(),"User is updated !!",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void getDataFromSqlite() {
+        Cursor rs = mydb.getData(1);
+        rs.moveToFirst();
+        email.setText(rs.getString(1));
+        password.setText(rs.getString(2));
+        security.setText(rs.getString(3));
+
+
+    }
+
     private void getDataFromSharedPref() {
         email.setText(preferences.getString("email",""));
         password.setText(preferences.getString("password",""));
@@ -109,6 +132,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveDataIntoSqlite(String strEmail, String strPassword, String strSecurity) {
+        if(mydb.insertUser(strEmail,strPassword,strSecurity)){
+            Toast.makeText(getApplicationContext(),"User is registered !!",Toast.LENGTH_SHORT).show();
+            clear.performClick();
+        }
     }
 
     private void saveDataIntoSharedPref(String strEmail, String strPassword, String strSecurity) {
